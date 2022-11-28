@@ -2,19 +2,20 @@
 #include <stdio.h>
 #include <string.h>
 
-#define DIRSIZ 14
-#define NBUF 16
+#define KEYLENGTH 16
+#define HTABLESIZE 16
 
 typedef unsigned int uint;
 
 struct node {
-    char name[DIRSIZ];    
+    char key[KEYLENGTH];
+    void *ptr;
 };
 
 struct htable {
     uint capacity;
     uint nkeys;
-    struct node nodes[NBUF];
+    struct node nodes[HTABLESIZE];
 };
 
 
@@ -34,7 +35,7 @@ static uint htable_word_to_int(const char *word) {
 }
 
 
-void displaytable(struct htable *t) {
+void displaytable(struct htable *t, void(*printfunc)(int, void *)) {
     int i;
     
     struct node *n;
@@ -43,9 +44,9 @@ void displaytable(struct htable *t) {
         
         n = &t->nodes[i];
         
-        if(strlen(n->name) == 0)
+        if(strlen(n->key) == 0)
             continue;
-        printf("%d | %s\n", i, n->name);
+        printfunc(i, n);
     }
 }
 
@@ -64,7 +65,7 @@ struct node* htablesearch(struct htable *t, const char *key) {
     
     collisions = 0;
     
-    while(strncmp(n->name, key, DIRSIZ) != 0) {
+    while(strncmp(n->key, key, KEYLENGTH) != 0) {
        
         collisions++;
         index = (++index % t->capacity);
@@ -98,9 +99,9 @@ uint htableinsert(struct htable *t, const char *key) {
     collisions = 0;
     
     
-    while(strlen(n->name) != 0) {
+    while(strlen(n->key) != 0) {
         
-        if(strncmp(n->name, key, DIRSIZ) == 0)
+        if(strncmp(n->key, key, KEYLENGTH) == 0)
             return 1;
         
         index = (++index % t->capacity);
@@ -108,14 +109,12 @@ uint htableinsert(struct htable *t, const char *key) {
         collisions++;
         if(collisions == t->capacity) break;
     }
-    
-    
+
     if(collisions == t->capacity) {
         return 0;
     }
-    
-   
-    strncpy(n->name, key, DIRSIZ);
+
+    strncpy(n->key, key, KEYLENGTH);
     t->nkeys++;
     return 1;
     
@@ -124,47 +123,13 @@ uint htableinsert(struct htable *t, const char *key) {
 
 uint htableremove(struct htable *t, const char *key) {
     struct node *n;
-    
     n = htablesearch(t, key);
-    
     if(!n) return 0;
-    
-    strncpy(n->name, "", DIRSIZ);
-    
+    strncpy(n->key, "", KEYLENGTH);
     return 1;
 }
 
-
-void initbcache() {
-    memset(&bcachetable, 0, sizeof(struct htable));
-    bcachetable.capacity = NBUF;
-    
-}
-
 int main() {
-    
-    
-    int i;
-    char s[DIRSIZ];
-    
-    // Write C code here
-    initbcache();
-    
-    
-    displaytable(&bcachetable);
-    
-    
-   for(i =0; i < bcachetable.capacity; i++) {
-       memset(&s, 0, DIRSIZ);
-       
-       snprintf(s, DIRSIZ, "%d", i);
-       htableinsert(&bcachetable, s);
-   }
-   
-    
-    
-  
-    displaytable(&bcachetable);
     
     return 0;
 }
